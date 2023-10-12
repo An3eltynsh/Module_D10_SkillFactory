@@ -1,0 +1,182 @@
+python manage.py shell
+>>> from NewsPortal.models import *
+----------------------------------------------------------------------------------
+1. Создать двух пользователей 
+(с помощью метода User.objects.create_user('username')).
+
+>>> User.objects.create_user('Иванов Иван Иванович')
+
+>>> User.objects.create_user('Алексеев Алексей Алексеевич')
+
+----------------------------------------------------------------------------------
+2. Создать два объекта модели Author, связанные с пользователями.
+
+>>> Author.objects.create(author=User.objects.get(username='Иванов Иван Иванович')) 
+
+>>> Author.objects.create(author=User.objects.get(pk=6))                        
+
+----------------------------------------------------------------------------------
+3. Добавить 4 категории в модель Category.
+
+>>> Category.objects.create(category='Полезные растения')
+
+>>> Category.objects.create(category='Новости Австралии')
+
+>>> Category.objects.create(category='Электроника')
+
+>>> Category.objects.create(category='Животные')
+
+-------------------------------------------------------------------------------------
+4. Добавить 2 статьи и 1 новость.
+
+>>> from NewsPortal.config import *
+>>> auth = Author.objects.get(author__username='Андреев Андрей')
+>>> tit = POSTS['post1'][0]
+>>> text = POSTS['post1'][1]
+>>> Post.objects.create(author=auth, choice=article, title=tit, text_p=text)
+
+>>> tit = POSTS['post2'][0]
+>>> text = POSTS['post2'][1]
+>>> Post.objects.create(author=auth, choice=article, title=tit, text_p=text)
+
+>>> auth = Author.objects.get(author__username='Австралийский Журналист')
+>>> tit = NEWS['news1'][0]
+>>> text = NEWS['news1'][1]
+>>> Post.objects.create(author=auth, choice=news, title=tit, text_p=text)
+
+----------------------------------------------------------------------------------------------------
+5. Присвоить им категории (как минимум в одной статье/новости должно быть не меньше 2 категорий).
+
+>>> auth.post_set.all().values('title')
+<QuerySet [{'title': 'Минобороны Австралии грозит крупный штраф из-за злостного нападения крокодила на солдат'}, 
+{'title': 'Выживший в океане c собакой австралиец решил отдать пса моряку'}, 
+{'title': 'Учёные обнаружили акулу с человеческими зубами'}]>
+>>> new = auth.post_set.all()[2]
+>>> cat = Category.objects.all()
+>>> cat.values('category')
+<QuerySet [{'category': 'Полезные растения'}, 
+{'category': 'Новости Австралии'}, 
+{'category': 'Электроника'}, 
+{'category': 'Животные'}, 
+{'category': 'Шифрование'}, 
+{'category': 'Физика'}, 
+{'category': 'Биология'}, 
+{'category': 'Акустика'}, 
+{'category': 'Экология'}]>
+>>> new.category.add(cat[1])
+>>> new.category.add(cat[3])
+
+>>> auth = Author.objects.get(author__username='Андреев Андрей')
+>>> auth.post_set.all().values('title')
+<QuerySet [{'title': 'Способы трансформации (шифрования) символьного текста'}, 
+{'title': 'Обзор состояния отрасли трансформаторного производства и тенденций р
+азвития конструкции силовых трансформаторов'}, 
+{'title': 'Параметрические приемные антенны в задачах экологического мониторинга водной среды'}, 
+{'title': 'Излучающая акустическая параметрическая антенна для мониторинга приземного слоя атмосферы'}]>
+>>> post1 = auth.post_set.all()[2]
+>>> post2 = auth.post_set.all()[3]
+>>> post1.category.add(cat[5])
+
+>>> post2.category.add(cat[5], cat[7])
+
+-----------------------------------------------------------------------------------------------------------
+6. Создать как минимум 4 комментария к разным объектам модели Post 
+(в каждом объекте должен быть как минимум один комментарий).
+
+>>> text = COMMENTS[1][1]
+>>> us = User.objects.get(username='Алексеев Алексей Алексеевич')
+>>> new = Author.objects.get(author__username='Австралийский Журналист').post_set.all()[2]
+>>> Comment.objects.create(post=new, user=us, text_c=text)
+
+>>> post1 = Author.objects.get(author__username='Андреев Андрей').post_set.all()[2]
+>>> text1 = COMMENTS[2][1]
+>>> text2 = COMMENTS[3][1]
+>>> text3 = COMMENTS[4][1]
+>>> us1 = User.objects.get(username='Иванов Иван Иванович')
+>>> us2 = User.objects.get(username='Иварс Имантсович')
+>>> us3 = User.objects.get(username='Пупка Бобэ')
+>>> Comment.objects.create(post=post1, user=us1, text_c=text1)
+>>> Comment.objects.create(post=post1, user=us2, text_c=text2)
+>>> Comment.objects.create(post=post1, user=us3, text_c=text3)
+
+>>> post2 = Author.objects.get(author__username='Андреев Андрей').post_set.all()[3]
+>>> text1 = COMMENTS[5][1] 
+>>> text2 = COMMENTS[6][1]
+>>> us1 = User.objects.get(username='Австралийский Журналист')
+>>> Comment.objects.create(post=post2, user=us1, text_c=text1)
+>>> Comment.objects.create(post=post2, user=us2, text_c=text2)
+
+---------------------------------------------------------------------------------------------
+7. Применяя функции like() и dislike() к статьям/новостям и комментариям, 
+скорректировать рейтинги этих объектов.
+
+>>> new.like() x 15
+
+>>> post1.like() х 4
+>>> post1.dislike()
+
+>>> post2.like() x 12
+
+>>> comm = User.objects.get(username='Австралийский Журналист').comment_set.all().first()
+>>> comm.like() x 21
+
+>>> comm = User.objects.get(username='Иварс Имантсович').comment_set.all()
+>>> comm[0].like() x 5
+>>> comm[1].like() x 7
+
+>>> comm = Comment.objects.filter(user__username='Алексеев Алексей Алексеевич')
+>>> comm.first().like() x 29
+
+>>> comm = User.objects.get(username='Пупка Бобэ').comment_set.all().first()
+>>> comm.dislike() x 8
+>>> comm.like() x 3
+>>> comm.rating_c
+-5
+
+>>> comm = User.objects.get(username='Иванов Иван Иванович').comment_set.all().first()
+>>> comm.like()
+>>> comm.dislike()
+>>> comm.like()
+>>> comm.like()
+
+------------------------------------------------------------------------------------------
+8. Обновить рейтинги пользователей.
+
+>>> us = Author.objects.get(pk=1) # pk = 1...6
+>>> us.update_rating()
+
+-------------------------------------------------------------------------------------------
+9. Вывести username и рейтинг лучшего пользователя (применяя сортировку и возвращая поля первого объекта).
+
+>>> Author.objects.all().order_by('-rating_a').values('author__username', 'rating_a').first()
+
+результат: {'author__username': 'Австралийский Журналист', 'rating_a': 95}
+
+----------------------------------------------------------------------------------------------
+10. Вывести дату добавления, username автора, рейтинг, заголовок и превью лучшей статьи, 
+основываясь на лайках/дислайках к этой статье.
+
+>>> post=Post.objects.all().order_by('-rating_p')
+>>> prew=post.first().preview()
+>>> post.values('dtime_p', 'author__author__username', 'rating_p', 'title').first(), prew
+
+результат: ({'dtime_p': datetime.datetime(2023, 8, 17, 13, 47, 0, 213771, tzinfo=datetime.timezone.utc), 
+'author__author__username': 'Австралийский Журналист', 
+'rating_p': 15, 
+'title': 'Учёные обнаружили акулу с человеческими зубами'}, 
+'Учёные обнаружили новый вид акул с человеческими зубами. Как сообщил 11 августа журнал Div
+ersity, они обитают на северо-вост...')
+
+--------------------------------------------------------------------------------------------------------
+11. Вывести все комментарии (дата, пользователь, рейтинг, текст) к этой статье.
+
+>>> com=Post.objects.get(pk=9).comment_set.all()
+>>> com.values('dtime_c', 'user__username', 'rating_c', 'text_c')
+результат: <QuerySet [{'dtime_c': datetime.datetime(2023, 8, 17, 15, 8, 59, 690920, tzinfo=datetime.timezone.utc), 
+'user__username': 'Алексеев Алексей Алексеевич',
+'rating_c': 29, 
+'text_c': 'Какой ужас!! Я больше никогда не поеду в Австралию!!!'}]>
+
+
+
+

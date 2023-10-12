@@ -1,0 +1,32 @@
+{% extends 'flatpages/default.html' %}
+
+{% load custom_filters %}
+{% block title %}
+news/{{ new.pk }}
+{% endblock title %}
+
+{% block name %}
+    {% if new.choice == "N" %}
+        <h1>{{ new.title|censor }}!</h1>
+    {% else %}
+        <br>
+    {% endif %}
+{% endblock name %}
+
+{% block content %}
+<hr>
+{% if new.choice == "N" %}
+  <table width="1000" cellspacing="5" cellpadding="20" border="0.1">
+      <tr>
+          <td><h3>Дата публикации</h3></td>
+          <td><h3>Текст</h3></td>
+      </tr>
+      <tr>
+          <td>{{ new.dtime_p|date:'M d Y' }}</td>
+          <td>{{ new.text_p|censor }}</td>
+      </tr>
+  </table>
+{% else %}
+<h1>Такой новости нет!</h1>
+{% endif %}
+{% endblock content %}
